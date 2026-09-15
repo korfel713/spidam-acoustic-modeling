@@ -1,0 +1,301 @@
+import pydub
+import wave
+import matplotlib.pyplot as plt
+import numpy as np
+import tkinter as tk
+from scipy.signal import spectrogram
+import download as d
+
+
+# displays the time length of the wav audio file
+def displayTime(temp):
+    # from view import Temp
+    wave_time = pydub.AudioSegment.from_file(file=d.audioFile, format="wav")
+    temp.insert(tk.END, "Time: " + str(len(wave_time)) + "\n")
+
+#displays wave form diffrence
+def displayForm(temp):
+    # from view import Temp
+    wave_form = d.audioFile
+    audio_file = wave.open(wave_form, "r")
+
+    # Extract Raw Audio from Wav File
+    raw_audio = audio_file.readframes(-1)
+    print(type(raw_audio))  # Check the type of raw_audio (should be bytes)
+
+    # Convert raw audio bytes to numpy array
+    fre = np.frombuffer(raw_audio, dtype="int16")
+    fs = audio_file.getframerate()  # Sampling frequency (frames per second)
+
+    # Step 1: Get the power of the audio signal (absolute value)
+    opower = np.abs(fre)
+
+    # Step 2: Convert power to a logarithmic scale (dB)
+    power = 20 * np.log10(opower + 1e-6)
+
+    # Step 3: Trim power to make signal start at 0 dB
+    power -= np.max(power)
+
+    # Generate time axis based on the length of the signal and sampling frequency
+    time = np.linspace(0, len(fre) / fs, num=len(fre))
+
+    decay_threshold1 = -10
+    decay_threshold2 = -5
+    decay_threshold3 = -3
+
+    # Step 4: Find the index where power drops below the threshold
+    decay_start_idx1 = np.argmax(power < decay_threshold1)
+    decay_start_idx2 = np.argmax(power < decay_threshold2)
+    decay_start_idx3 = np.argmax(power < decay_threshold3)
+    decay_times1 = time[decay_start_idx1:]  # Corresponding time values
+
+    decay_times2 = time[decay_start_idx2:]  # Corresponding time values
+    decay_times3 = time[decay_start_idx3:]  # Corresponding time values
+    timeavg= (decay_times1 + decay_times2 + decay_times3) / 3
+    diffrence = time - timeavg
+
+    temp.insert(tk.END, "diffrence " + str(len(timeavg)) + "\n")
+
+#displays largest amplitude of the wav audio file.
+def displayamplitude(temp):
+    # from view import Temp
+    wave_amp = pydub.AudioSegment.from_file(file=d.audioFile, format="wav")
+    temp.insert(tk.END, "Max Amplitude " + str(wave_amp.max) + "\n")
+
+
+#creates plot for the audio file
+def wavePlot():
+    wave_plot = d.audioFile
+    audio_file = wave.open(wave_plot, "r")
+    # Extract Raw Audio from Wav File
+    raw_audio = audio_file.readframes(-1)
+    print(type(raw_audio))
+    amp = np.frombuffer(raw_audio, dtype="int16")
+    fs = audio_file.getframerate()
+
+    time = np.linspace(0, len(amp) / fs, num=len(amp))
+
+    plt.figure(1)
+    plt.title("Wavefrom Graph")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Amplitude")
+    plt.legend()
+    plt.plot(time, amp)
+    plt.show()
+
+def intensityPlot():
+    intensity_plot = d.audioFile
+    audio_file = wave.open(intensity_plot, "r")
+    # Extract Raw Audio from Wav File
+    raw_audio = audio_file.readframes(-1)
+    print(type(raw_audio))
+    fre = np.frombuffer(raw_audio, dtype="int16")
+    fs = audio_file.getframerate()
+
+    time = np.linspace(0, len(fre) / fs, num=len(fre))
+
+    # Step 3: Compute the spectrogram
+    frequencies, times, Sxx = spectrogram(fre, fs=fs)
+
+    # Step 4: Plot the intensity (spectrogram)
+    plt.figure(figsize=(10, 6))
+    plt.pcolormesh(times, frequencies, 10 * np.log10(Sxx), shading='auto')  # Log scale for intensity
+
+    plt.figure(1)
+    plt.title("Frequency Graph...")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Frequency [HZ]")
+    plt.legend()
+    plt.colorbar(label='Intensity [dB]')
+    plt.plot(time, fre)
+    plt.show()
+
+def lowrt60graph():
+    # Assuming d.audioFile holds the path to the wav file
+    rt60_plot = d.audioFile  # Replace with actual file path or audio data source
+    audio_file = wave.open(rt60_plot, "r")
+
+    # Extract Raw Audio from Wav File
+    raw_audio = audio_file.readframes(-1)
+    print(type(raw_audio))  # Check the type of raw_audio (should be bytes)
+
+    # Convert raw audio bytes to numpy array
+    fre = np.frombuffer(raw_audio, dtype="int16")
+    fs = audio_file.getframerate()  # Sampling frequency (frames per second)
+
+    # Step 1: Get the power of the audio signal (absolute value)
+    opower = np.abs(fre)
+
+    # Step 2: Convert power to a logarithmic scale (dB)
+    power = 20 * np.log10(opower + 1e-6)
+
+    # Step 3: Trim power to make signal start at 0 dB
+    power -= np.max(power)
+
+    # Generate time axis based on the length of the signal and sampling frequency
+    time = np.linspace(0, len(fre) / fs, num=len(fre))
+
+    decay_threshold = -10
+    title = "Low RT60 Graph"
+
+
+    # Step 4: Find the index where power drops below the threshold
+    decay_start_idx = np.argmax(power < decay_threshold)  # First index where power < threshold
+    decay_times = time[decay_start_idx:]  # Corresponding time values
+    decay_db = power[decay_start_idx:]  # Corresponding power values in dB
+
+    # Step 5: Plot the RT60 decay curve
+    plt.figure(figsize=(10, 6))
+    #plt.plot(time, power, label="Power (dB)", color="b")  # Full power curve
+    plt.plot(decay_times, decay_db, label=f"Decay (Threshold: {decay_threshold} dB)", color="r", linestyle="--")
+    plt.title(title)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Power [dB]")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+def mediumrt60graph():
+    # Assuming d.audioFile holds the path to the wav file
+    rt60_plot = d.audioFile  # Replace with actual file path or audio data source
+    audio_file = wave.open(rt60_plot, "r")
+
+    # Extract Raw Audio from Wav File
+    raw_audio = audio_file.readframes(-1)
+    print(type(raw_audio))  # Check the type of raw_audio (should be bytes)
+
+    # Convert raw audio bytes to numpy array
+    fre = np.frombuffer(raw_audio, dtype="int16")
+    fs = audio_file.getframerate()  # Sampling frequency (frames per second)
+
+    # Step 1: Get the power of the audio signal (absolute value)
+    opower = np.abs(fre)
+
+    # Step 2: Convert power to a logarithmic scale (dB)
+    power = 20 * np.log10(opower + 1e-6)
+
+    # Step 3: Trim power to make signal start at 0 dB
+    power -= np.max(power)
+
+    # Generate time axis based on the length of the signal and sampling frequency
+    time = np.linspace(0, len(fre) / fs, num=len(fre))
+
+    decay_threshold = -5
+    title = "Medium RT60 Graph"
+
+    # Step 4: Find the index where power drops below the threshold
+    decay_start_idx = np.argmax(power < decay_threshold)  # First index where power < threshold
+    decay_times = time[decay_start_idx:]  # Corresponding time values
+    decay_db = power[decay_start_idx:]  # Corresponding power values in dB
+
+    # Step 5: Plot the RT60 decay curve
+    plt.figure(figsize=(10, 6))
+    #plt.plot(time, power, label="Power (dB)", color="b")  # Full power curve
+    plt.plot(decay_times, decay_db, label=f"Decay (Threshold: {decay_threshold} dB)", color="g", linestyle="--")
+    plt.title(title)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Power [dB]")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+def highrt60graph():
+    # Assuming d.audioFile holds the path to the wav file
+    rt60_plot = d.audioFile  # Replace with actual file path or audio data source
+    audio_file = wave.open(rt60_plot, "r")
+
+    # Extract Raw Audio from Wav File
+    raw_audio = audio_file.readframes(-1)
+    print(type(raw_audio))  # Check the type of raw_audio (should be bytes)
+
+    # Convert raw audio bytes to numpy array
+    fre = np.frombuffer(raw_audio, dtype="int16")
+    fs = audio_file.getframerate()  # Sampling frequency (frames per second)
+
+    # Step 1: Get the power of the audio signal (absolute value)
+    opower = np.abs(fre)
+
+    # Step 2: Convert power to a logarithmic scale (dB)
+    power = 20 * np.log10(opower + 1e-6)
+
+    # Step 3: Trim power to make signal start at 0 dB
+    power -= np.max(power)
+
+    # Generate time axis based on the length of the signal and sampling frequency
+    time = np.linspace(0, len(fre) / fs, num=len(fre))
+
+    decay_threshold = -3
+    title = "High RT60 Graph"
+
+    # Step 4: Find the index where power drops below the threshold
+    decay_start_idx = np.argmax(power < decay_threshold)  # First index where power < threshold
+    decay_times = time[decay_start_idx:]  # Corresponding time values
+    decay_db = power[decay_start_idx:]  # Corresponding power values in dB
+
+    # Step 5: Plot the RT60 decay curve
+    plt.figure(figsize=(10, 6))
+    #plt.plot(time, power, label="Power (dB)", color="b")  # Full power curve
+    plt.plot(decay_times, decay_db, label=f"Decay (Threshold: {decay_threshold} dB)", color="b", linestyle="--")
+    plt.title(title)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Power [dB]")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+def rt60graphcombine():
+    # Assuming d.audioFile holds the path to the wav file
+    rt60_plot = d.audioFile  # Replace with actual file path or audio data source
+    audio_file = wave.open(rt60_plot, "r")
+
+    # Extract Raw Audio from Wav File
+    raw_audio = audio_file.readframes(-1)
+    print(type(raw_audio))  # Check the type of raw_audio (should be bytes)
+
+    # Convert raw audio bytes to numpy array
+    fre = np.frombuffer(raw_audio, dtype="int16")
+    fs = audio_file.getframerate()  # Sampling frequency (frames per second)
+
+    # Step 1: Get the power of the audio signal (absolute value)
+    opower = np.abs(fre)
+
+    # Step 2: Convert power to a logarithmic scale (dB)
+    power = 20 * np.log10(opower + 1e-6)
+
+    # Step 3: Trim power to make signal start at 0 dB
+    power -= np.max(power)
+
+    # Generate time axis based on the length of the signal and sampling frequency
+    time = np.linspace(0, len(fre) / fs, num=len(fre))
+
+    decay_threshold1 = -10
+    decay_threshold2 = -5
+    decay_threshold3 = -3
+    title = "combined RT60 Graph"
+
+    # Step 4: Find the index where power drops below the threshold
+    decay_start_idx1 = np.argmax(power < decay_threshold1)
+    decay_start_idx2 = np.argmax(power < decay_threshold2)
+    decay_start_idx3 = np.argmax(power < decay_threshold3)
+    decay_times1 = time[decay_start_idx1:]  # Corresponding time values
+    decay_db1 = power[decay_start_idx1:]  # Corresponding power values in dB
+
+    decay_times2 = time[decay_start_idx2:]  # Corresponding time values
+    decay_db2 = power[decay_start_idx2:]  # Corresponding power values in dB
+    decay_times3 = time[decay_start_idx3:]  # Corresponding time values
+    decay_db3 = power[decay_start_idx3:]  # Corresponding power values in dB
+
+    # Step 5: Plot the RT60 decay curve
+    plt.figure(figsize=(10, 6))
+    plt.plot(decay_times1, decay_db1, label=f"Decay (Threshold: {decay_threshold1} dB)", color="r", linestyle="--")
+
+    plt.plot(decay_times2, decay_db2, label=f"Decay (Threshold: {decay_threshold2} dB)", color="g", linestyle="--")
+
+    plt.plot(decay_times3, decay_db3, label=f"Decay (Threshold: {decay_threshold3} dB)", color="b", linestyle="--")
+    plt.title(title)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Power [dB]")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
