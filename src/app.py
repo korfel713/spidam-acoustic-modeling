@@ -1,0 +1,104 @@
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import *
+import controller as dm
+import download as d
+from controller import displayTime, displayamplitude, displayForm
+
+
+def select_file():
+    file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3"), ("All Files", "*.*")])
+    if file_path:
+        entry.delete(0, tk.END)
+        entry.insert(tk.END, file_path)
+
+# Run Program
+class Run:
+    count = 0
+    ent = ""
+    def __init__(self):
+        self.count +=1
+    def run(self):
+        if self.count == 1:
+            self.count += 5
+            guiView.mainloop()
+
+def download():
+    d.downloader(entry.get())
+
+def dtime():
+    displayTime(Temp)
+
+def damp():
+    displayamplitude(Temp)
+
+def dform():
+    displayForm(Temp)
+
+guiView = tk.Tk()
+guiView.title("Audio Downloader")
+guiView.resizable(False, False)
+guiView.geometry('600x600')
+
+
+select_button = tk.Button(master = guiView, command=select_file, text="Select File")
+
+
+entry = tk.Entry(master= guiView, width=50)
+
+ent = entry.get()
+
+download_button = tk.Button(master= guiView,command=download, text="Download", )
+
+
+time_button = tk.Button(master= guiView,command=dtime, text="Time Details")
+
+amp_button = tk.Button(master= guiView,command=damp, text="frequency Details")
+
+form_button = tk.Button(master= guiView, command=dform, text="form Details" )
+
+
+status_label = tk.Label(guiView, text="")
+
+
+plot_wavegraph_button = tk.Button(master=guiView, command=dm.wavePlot, text="Plot wave Graph")
+
+plot_intensity_graph_button = tk.Button(master=guiView, command=dm.intensityPlot, text="Plot intensity Graph")
+
+plot_lowrt60graph_button = tk.Button(master=guiView, command=dm.lowrt60graph, text="low RT60 Graphs")
+
+plot_mediumrt60graph_button = tk.Button(master=guiView, command=dm.mediumrt60graph, text="medium RT60 Graphs")
+
+plot_highrt60graph_button = tk.Button(master=guiView, command=dm.highrt60graph, text="high RT60 Graphs")
+
+combine_rt60graph_button = tk.Button(master=guiView, command=dm.rt60graphcombine, text="combine RT60 Graphs")
+
+# Create text widget and specify size.
+Temp = Text(guiView, height=5, width=52)
+# Exit Button
+quit_button = Button(guiView, text="Exit",command=guiView.destroy)
+
+
+# Button Packing Order
+select_button.pack()
+entry.pack()
+download_button.pack()
+Temp.pack()
+time_button.pack()
+amp_button.pack()
+form_button.pack()
+status_label.pack()
+plot_wavegraph_button.pack()
+plot_intensity_graph_button.pack()
+plot_lowrt60graph_button.pack()
+plot_mediumrt60graph_button.pack()
+plot_highrt60graph_button.pack()
+combine_rt60graph_button.pack()
+quit_button.pack()
+
+if __name__ == "__main__":
+    run = Run()
+    run.run()
+
+
+
